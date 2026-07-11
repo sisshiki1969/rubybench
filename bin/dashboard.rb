@@ -22,50 +22,71 @@ benchmarks = YAML.load_file(File.expand_path('../benchmark/ruby-bench/benchmarks
 # TODO(max): Remove this filter when Ractor benchmarks are meant to be run by default
 benchmarks.select! {|benchmark, _| !benchmark.to_s.include? 'ractor/'}
 benchmark_results = benchmarks.map do |benchmark, _|
-  [benchmark, YAML.load_file(File.expand_path("../results/ruby-bench/#{benchmark}.yml", __dir__))]
+  path = File.expand_path("../results/ruby-bench/#{benchmark}.yml", __dir__)
+  [benchmark, File.exist?(path) ? YAML.load_file(path) : {}]
 end.to_h
 rss_results = benchmarks.map do |benchmark, _|
   rss_path = File.expand_path("../results/ruby-bench-rss/#{benchmark}.yml", __dir__)
   [benchmark, File.exist?(rss_path) ? YAML.load_file(rss_path) : {}]
 end.to_h
+monoruby_results = benchmarks.map do |benchmark, _|
+  path = File.expand_path("../results/monoruby-bench/#{benchmark}.yml", __dir__)
+  [benchmark, File.exist?(path) ? YAML.load_file(path) : {}]
+end.to_h
+monoruby_rss_results = benchmarks.map do |benchmark, _|
+  path = File.expand_path("../results/monoruby-bench-rss/#{benchmark}.yml", __dir__)
+  [benchmark, File.exist?(path) ? YAML.load_file(path) : {}]
+end.to_h
 
 ruby = rubies.select { |ruby| benchmark_results.first.last.key?(ruby) }.max
 rss_ruby = rss_results.values.flat_map(&:keys).max
+monoruby = monoruby_results.values.flat_map(&:keys).max
+monoruby_rss = monoruby_rss_results.values.flat_map(&:keys).max
 dashboard = {
   date: to_date(ruby),
   rss_date: rss_ruby ? to_date(rss_ruby) : nil,
+  monoruby_date: monoruby ? to_date(monoruby) : nil,
+  monoruby_rss_date: monoruby_rss ? to_date(monoruby_rss) : nil,
   headline: {
     no_jit: [],
     yjit: [],
     zjit: [],
+    monoruby: [],
     benchmarks: [],
-    rss: { no_jit: [], yjit: [], zjit: [], benchmarks: [] },
+    rss: { no_jit: [], yjit: [], zjit: [], monoruby: [], benchmarks: [] },
   },
   other: {
     no_jit: [],
     yjit: [],
     zjit: [],
+    monoruby: [],
     benchmarks: [],
-    rss: { no_jit: [], yjit: [], zjit: [], benchmarks: [] },
+    rss: { no_jit: [], yjit: [], zjit: [], monoruby: [], benchmarks: [] },
   },
   micro: {
     no_jit: [],
     yjit: [],
     zjit: [],
+    monoruby: [],
     benchmarks: [],
-    rss: { no_jit: [], yjit: [], zjit: [], benchmarks: [] },
+    rss: { no_jit: [], yjit: [], zjit: [], monoruby: [], benchmarks: [] },
   },
 }
 
 benchmarks.sort_by(&:first).each do |benchmark, metadata|
   results = benchmark_results.fetch(benchmark)
   category = metadata.fetch(:category, 'other').to_sym
+  next unless dashboard.key?(category)
 
   no_jit, yjit, zjit = results[ruby]
   if no_jit
     dashboard[category][:no_jit] << format_float(no_jit / no_jit)
     dashboard[category][:yjit] << (yjit ? format_float(no_jit / yjit) : 0.0)
     dashboard[category][:zjit] << (zjit ? format_float(no_jit / zjit) : 0.0)
+    # Compare monoruby against no_jit from the same day as the monoruby result
+    mono = monoruby && monoruby_results.fetch(benchmark)[monoruby]&.first
+    mono_no_jit = monoruby && results[monoruby]&.first
+    dashboard[category][:monoruby] << (mono && mono_no_jit ? format_float(mono_no_jit / mono) : 0.0)
     dashboard[category][:benchmarks] << benchmark.to_s
   end
 
@@ -75,6 +96,9 @@ benchmarks.sort_by(&:first).each do |benchmark, metadata|
     dashboard[category][:rss][:no_jit] << format_float(rss_no_jit / rss_no_jit)
     dashboard[category][:rss][:yjit] << (rss_yjit ? format_float(rss_yjit / rss_no_jit) : 0.0)
     dashboard[category][:rss][:zjit] << (rss_zjit ? format_float(rss_zjit / rss_no_jit) : 0.0)
+    rss_mono = monoruby_rss && monoruby_rss_results.fetch(benchmark)[monoruby_rss]&.first
+    rss_mono_no_jit = monoruby_rss && rss[monoruby_rss]&.first
+    dashboard[category][:rss][:monoruby] << (rss_mono && rss_mono_no_jit ? format_float(rss_mono / rss_mono_no_jit) : 0.0)
     dashboard[category][:rss][:benchmarks] << benchmark.to_s
   end
 end

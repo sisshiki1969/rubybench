@@ -1,6 +1,6 @@
 [submodule "ruby-bench"]
 	path = benchmark/ruby-bench
-	url = https://github.com/ruby/ruby-bench
+	url = https://github.com/sisshiki1969/ruby-bench
 	shallow = true
 [submodule "benchmark-driver"]
 	path = benchmark/benchmark-driver
