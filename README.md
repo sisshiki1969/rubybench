@@ -21,6 +21,17 @@ bin/hocho apply ruby-kai1
 5. That script runs a benchmark, updates YAMLs, and pushes it to the rubybench-data repository with bin/sync-results.rb.
 6. As soon as the YAML is pushed, https://github.com/rubybench/rubybench.github.io sees it through GitHub's raw bob.
 
+This fork additionally benchmarks [monoruby](https://github.com/sisshiki1969/monoruby)
+on the same machine so its results are comparable with the CRuby ones:
+after the CRuby run, [benchmark/monoruby.rb](benchmark/monoruby.rb) builds
+monoruby master (Rust toolchain required), records the benchmarked revision
+in `results/monorubies.yml`, and runs the ruby-bench suite with it through
+`benchmark/ruby-bench/misc/monoruby-sync.rb`, writing to
+`results/monoruby-bench{,-rss}/`. The results repository and commit prefix
+default to this fork and the hostname, and can be overridden with the
+`RUBYBENCH_RESULTS_REPO` / `RUBYBENCH_RESULTS_COMMIT_PREFIX` environment
+variables.
+
 ## Useful commands
 
 * Stopping the timer (to avoid interferences): `sudo systemctl stop rubybench.timer`

@@ -40,6 +40,8 @@ class ResultSyncer
       "Sync ruby-bench results"
     when 'ruby'
       "Sync ruby/ruby benchmark results"
+    when 'monoruby'
+      "Sync monoruby-bench results"
     else
       "Sync benchmark results"
     end
@@ -51,9 +53,9 @@ end
 result_type = ARGV[0]
 
 # Validate result type if provided
-if result_type && !['ruby-bench', 'ruby'].include?(result_type)
+if result_type && !['ruby-bench', 'ruby', 'monoruby'].include?(result_type)
   $stderr.puts "ERROR: Invalid result type '#{result_type}'"
-  $stderr.puts "Valid options are: ruby-bench, ruby"
+  $stderr.puts "Valid options are: ruby-bench, ruby, monoruby"
   exit 1
 end
 
