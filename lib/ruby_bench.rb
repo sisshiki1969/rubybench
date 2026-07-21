@@ -62,6 +62,11 @@ class RubyBench
 
     [nil, '--yjit', '--zjit'].each do |opts|
       out = @runner.execute(benchmark, opts: opts, category: category, no_pinning: no_pinning)
+      # Subprocess output is read with the host's default external encoding,
+      # which can be US-ASCII in minimal environments. The benchmark summary
+      # table contains non-ASCII characters (e.g. the "±" stddev marker), so
+      # normalize to UTF-8 before parsing to avoid invalid byte sequence errors.
+      out = out.to_s.dup.force_encoding(Encoding::UTF_8)
       puts out
 
       if is_ractor
@@ -141,3 +146,4 @@ end
 require_relative 'ruby_bench/benchmarks'
 require_relative 'ruby_bench/runner'
 require_relative 'ruby_bench/docker_runner'
+require_relative 'ruby_bench/local_runner'
